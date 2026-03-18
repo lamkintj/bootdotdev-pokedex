@@ -1,5 +1,5 @@
-import readline from "node:readline";
-import { getCommands } from "./commands.js";
+import { createInterface, type Interface } from "node:readline";
+import { State } from "./state.js";
 
 export function cleanInput(input: string): string[] {
     const words: string[] = input
@@ -13,40 +13,35 @@ export function cleanInput(input: string): string[] {
 
 // Use of readline module to build REPL interface
 
-export function startREPL() {
-    const repl: readline.Interface = readline.createInterface(
-        process.stdin,
-        process.stdout,
-    );
+export function startREPL(state: State) {
+    const rl = state.rlInterface;
+    const commands = state.cmdRegistry;
+    rl.setPrompt("Pokedex > ");
+    rl.prompt();
 
-    repl.setPrompt("Pokedex > ");
-    repl.prompt();
-
-  repl.on("line", async (input) => {
+  rl.on("line", async (input) => {
     const words = cleanInput(input);
     if (words.length === 0) {
-      repl.prompt();
+      rl.prompt();
       return;
     }
 
     const commandName = words[0];
-
-    const commands = getCommands();
     const cmd = commands[commandName];
     if (!cmd) {
       console.log(
         `Unknown command: "${commandName}". Type "help" for a list of commands.`,
       );
-      repl.prompt();
+      rl.prompt();
       return;
     }
 
     try {
-      cmd.callback(commands);
+      cmd.callback(state);
     } catch (err) {
       console.log(err);
     }
 
-    repl.prompt();
+    rl.prompt();
   });
 }
