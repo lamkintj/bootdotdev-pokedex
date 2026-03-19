@@ -1,38 +1,42 @@
 import { createInterface, type Interface } from "node:readline";
-import { commandExit } from "./command_exit.js";
-import { commandHelp } from "./command_help.js";
+import { PokeAPI } from "./pokeapi.js";
+import { getCommands } from "./commands.js";
+import { Pokemon } from "./command_catch.js";
 
 export type CLICommand = {
     name: string;
     description: string;
-    callback: (state: State) => void;
+    callback: (state: State, ...args: string[]) => Promise<void>;
 };
 
 export type State = {
-    cmdRegistry: Record<string, CLICommand>;
-    rlInterface: Interface;
+    commands: Record<string, CLICommand>;
+    readline: Interface;
+    pokeAPI: PokeAPI;
+    nextLocationURL: string;
+    prevLocationURL: string;
+    pokedex: Record<string, Pokemon>;
 };
 
-export function initState () {
+export function initState (cacheInterval: number) {
     const rl: Interface = createInterface(
         process.stdin,
         process.stdout,
     );
-    const registry: Record<string, CLICommand> = {
-        exit: {
-            name: "exit",
-            description: "Exits the pokedex",
-            callback: commandExit,
-        },
-        help: {
-            name: "help",
-            description: "Displays usage summary for the pokedex",
-            callback: commandHelp,
-        },
-    };
+    const API = new PokeAPI(cacheInterval);
+    const next = "";
+    const prev = "null";
+    const registry: Record<string, CLICommand> = getCommands();
+    const pokedex: Record<string, Pokemon> = {};
     const newState: State = {
-        cmdRegistry: registry,
-        rlInterface: rl,
+        commands: registry,
+        readline: rl,
+        pokeAPI: API,
+        nextLocationURL: next,
+        prevLocationURL: prev,
+        pokedex: pokedex,
     }
+    
     return newState;
 }
+
